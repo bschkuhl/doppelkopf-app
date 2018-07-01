@@ -41,6 +41,7 @@ public class Spielbrett {
 	Gamedata gamedata;
 	Save save;
 	static MqttClient spielbrettclient;
+
 	// Initialisiere Spielbrett, d.h. erstellen der Karten, mischen des Stapels,
 	// verteilen und starten des Spiels
 	public Spielbrett(Spieler[] spielerdaten) throws MqttException, InterruptedException {
@@ -57,9 +58,9 @@ public class Spielbrett {
 		spieler4 = spielerdaten[3];
 		spieler4.nummer = 4;
 		alleSpieler = spielerdaten;
-		gamedata = new Gamedata(0, 0, 0, 0, "","","", "", "");
+		gamedata = new Gamedata(0, 0, 0, 0, "", "", "", "", "");
 		save = new Save();
-		
+
 		spielbrettclient = new MqttClient("tcp://localhost:1883", MqttClient.generateClientId());
 
 		spielbrettclient.setCallback(new MqttCallback() {
@@ -81,10 +82,10 @@ public class Spielbrett {
 		});
 		spielbrettclient.connect();
 
-		spielbrettclient.subscribe("von="+alleSpieler[0].getcId());
-		spielbrettclient.subscribe("von="+alleSpieler[1].getcId());
-		spielbrettclient.subscribe("von="+alleSpieler[2].getcId());
-		spielbrettclient.subscribe("von="+alleSpieler[3].getcId());
+		spielbrettclient.subscribe("von=" + alleSpieler[0].getcId());
+		spielbrettclient.subscribe("von=" + alleSpieler[1].getcId());
+		spielbrettclient.subscribe("von=" + alleSpieler[2].getcId());
+		spielbrettclient.subscribe("von=" + alleSpieler[3].getcId());
 
 		stapelErstellen();
 		shuffle();
@@ -221,7 +222,7 @@ public class Spielbrett {
 
 	// Starten des Spiels, steuert Gewinnbedingungen, gibt Tabellen aus
 	public void startGame() throws MqttException, InterruptedException {
-		ausgabe="";
+		ausgabe = "";
 		ausgabe += "Spiel gestartet" + "\n";
 		ausgabe += "################ NEUES SPIEL GESTARTET ################" + "\n";
 		ausgabe += "************* ANSAGEN *************" + "\n";
@@ -231,7 +232,7 @@ public class Spielbrett {
 		teamsBilden();
 		blattAnzeigen();
 		for (int i = 0; i < 12; i++) {
-			ausgabe="";
+			ausgabe = "";
 			ausgabe += "\n";
 			ausgabe += "____________ AKTUELLER PUNKTESTAND ____________" + "\n";
 			ausgabe += "Spieler 1: " + spieler1.getpunktestand() + "\n";
@@ -243,46 +244,46 @@ public class Spielbrett {
 
 			Spielbrett.publishData("allData", ausgabe);
 			ausgabe = "";
-			
+
 			startRound();
 			ausgabe = "";
-			ausgabe +="\n";
-			ausgabe +="################ RUNDE " + (i + 1) + " BEENDET ################";
-			ausgabe +="\n";
-			ausgabe +="################ SPIELER " + (bekommtStich + 1) + " GEWINNT DIE RUNDE ################"+"\n";
+			ausgabe += "\n";
+			ausgabe += "################ RUNDE " + (i + 1) + " BEENDET ################";
+			ausgabe += "\n";
+			ausgabe += "################ SPIELER " + (bekommtStich + 1) + " GEWINNT DIE RUNDE ################" + "\n";
 
 			if (berechneRe() >= 121) {
-				ausgabe +="TEAM RE GEWINNT DAS SPIEL"+"\n";
-				ausgabe +="TEAM RE (";
+				ausgabe += "TEAM RE GEWINNT DAS SPIEL" + "\n";
+				ausgabe += "TEAM RE (";
 				for (Spieler s : re) {
-					ausgabe +="Spieler " + s.nummer + " ";
+					ausgabe += "Spieler " + s.nummer + " ";
 				}
-				ausgabe +=") GEWINNEN MIT EINER PUNKTZAHL VON: " + berechneRe() + " PUNKTEN!";
-				ausgabe +="\n";
+				ausgabe += ") GEWINNEN MIT EINER PUNKTZAHL VON: " + berechneRe() + " PUNKTEN!";
+				ausgabe += "\n";
 				break;
 			} else if (berechneKontra() >= 120) {
-				ausgabe +="TEAM KONTRA GEWINNT DAS SPIEL";
-				ausgabe +="TEAM KONTRA (";
+				ausgabe += "TEAM KONTRA GEWINNT DAS SPIEL";
+				ausgabe += "TEAM KONTRA (";
 				for (Spieler s : kontra) {
-					ausgabe +="Spieler " + s.nummer + " ";
+					ausgabe += "Spieler " + s.nummer + " ";
 				}
-				ausgabe +=") GEWINNEN MIT EINER PUNKTZAHL VON: " + berechneKontra() + " PUNKTEN!";
-				ausgabe +="\n";
+				ausgabe += ") GEWINNEN MIT EINER PUNKTZAHL VON: " + berechneKontra() + " PUNKTEN!";
+				ausgabe += "\n";
 				break;
 			}
 			Spielbrett.publishData("allData", ausgabe);
 		}
 		ausgabe = "";
-		ausgabe +="____________ ENDPUNKTESTAND ____________";
-		ausgabe +="\n";
-		ausgabe +="Spieler 1: " + spieler1.getpunktestand() + "\n";
-		ausgabe +="Spieler 2: " + spieler2.getpunktestand() + "\n";
-		ausgabe +="Spieler 3: " + spieler3.getpunktestand() + "\n";
-		ausgabe +="Spieler 4: " + spieler4.getpunktestand() + "\n";
-		ausgabe +="_______________________________________________" + "\n";
+		ausgabe += "____________ ENDPUNKTESTAND ____________";
+		ausgabe += "\n";
+		ausgabe += "Spieler 1: " + spieler1.getpunktestand() + "\n";
+		ausgabe += "Spieler 2: " + spieler2.getpunktestand() + "\n";
+		ausgabe += "Spieler 3: " + spieler3.getpunktestand() + "\n";
+		ausgabe += "Spieler 4: " + spieler4.getpunktestand() + "\n";
+		ausgabe += "_______________________________________________" + "\n";
 
-		ausgabe +="################## SPIEL BEENDET ##################" + "\n";
-		ausgabe +="###################################################" + "\n";
+		ausgabe += "################## SPIEL BEENDET ##################" + "\n";
+		ausgabe += "###################################################" + "\n";
 		Spielbrett.publishData("allData", ausgabe);
 	}
 
@@ -290,10 +291,9 @@ public class Spielbrett {
 	public void startRound() throws MqttException, InterruptedException {
 		bedienen = null;
 		for (int i = 0; i < 4; i++) {
-			ausgabe="";
+			ausgabe = "";
 			ausgabe += "\n" + "################ SPIELER " + (currentPlayer + 1) + " ################";
 			Spielbrett.publishData("allData", ausgabe);
-		
 
 			ablegestapelAnzeigen();
 			karteSpielen();
@@ -321,15 +321,15 @@ public class Spielbrett {
 		gamedata.setSpieler3(alleSpieler[2].getUsername());
 		gamedata.setSpieler4(alleSpieler[3].getUsername());
 		gamedata.setDate("" + System.currentTimeMillis() + "");
-		
+
 		save.saveGame(gamedata);
-//		save.getGames();
+		// save.getGames();
 		ablegestapel.clear();
 	}
 
 	// Anzeigen des Ablegestapels vor dem Spielen einer Karte
 	public void ablegestapelAnzeigen() throws MqttException {
-		ausgabe="";
+		ausgabe = "";
 		ausgabe += "////// STAPEL ///////" + "\n";
 
 		for (int k = 0; k < ablegestapel.size(); k++) {
@@ -360,7 +360,7 @@ public class Spielbrett {
 	public int karteSpielen() throws MqttException, InterruptedException {
 		String mtype = "mtype=karteSpielen";
 		String mcontent = "&mcontent=Spielen Sie eine Karte (1 - 12): ";
-		publishData("an="+alleSpieler[currentPlayer].getcId(), mtype + mcontent);
+		publishData("an=" + alleSpieler[currentPlayer].getcId(), mtype + mcontent);
 
 		while (!weiter) {
 			TimeUnit.SECONDS.sleep(1);
@@ -368,17 +368,17 @@ public class Spielbrett {
 		weiter = false;
 
 		boolean kannBedienen = false;
-		mtype="mtype=nachricht";
-		mcontent="&mcontent=";
+		mtype = "mtype=nachricht";
+		mcontent = "&mcontent=";
 		int n = Integer.parseInt(mAnswer) - 1;
 		if (0 <= n && n < 12) {
-			
+
 			if (bedienen == null) {
 				ablegestapel.add(blatt[currentPlayer][n]);
 				blatt[currentPlayer][n] = null;
 			} else {
 				if (bedienen.equals("Trumpf")) {
-					
+
 					for (int j = 0; j < blatt[currentPlayer].length; j++) {
 						if (!(blatt[currentPlayer][j] == null)) {
 							if (blatt[currentPlayer][j].getTrumpf()) {
@@ -386,20 +386,22 @@ public class Spielbrett {
 							}
 						}
 					}
-					
+
 					if (!(blatt[currentPlayer][n] == null)) {
 						if (kannBedienen && !blatt[currentPlayer][n].getTrumpf()) {
-							publishData("an="+alleSpieler[currentPlayer].getcId(), mtype + mcontent + "Trumpf muss bedient werden!!\n");
+							publishData("an=" + alleSpieler[currentPlayer].getcId(),
+									mtype + mcontent + "Trumpf muss bedient werden!!\n");
 							karteSpielen();
 						} else {
 							ablegestapel.add(blatt[currentPlayer][n]);
 							blatt[currentPlayer][n] = null;
 						}
 					} else {
-						publishData("an="+alleSpieler[currentPlayer].getcId(), mtype + mcontent + "Die Karte existiert nicht.\n");
+						publishData("an=" + alleSpieler[currentPlayer].getcId(),
+								mtype + mcontent + "Die Karte existiert nicht.\n");
 						karteSpielen();
 					}
-				} 
+				}
 
 				else if (bedienen.equals("Kreuz")) {
 					for (int j = 0; j < blatt[currentPlayer].length; j++) {
@@ -413,17 +415,20 @@ public class Spielbrett {
 					if (!(blatt[currentPlayer][n] == null)) {
 						if (kannBedienen && blatt[currentPlayer][n].getColor().equals("Kreuz")
 								&& blatt[currentPlayer][n].getTrumpf()) {
-							publishData("an="+alleSpieler[currentPlayer].getcId(), mtype + mcontent + "Du musst mit Fehl bedienen.\n");
+							publishData("an=" + alleSpieler[currentPlayer].getcId(),
+									mtype + mcontent + "Du musst mit Fehl bedienen.\n");
 							karteSpielen();
 						} else if (kannBedienen && !blatt[currentPlayer][n].getColor().equals("Kreuz")) {
-							publishData("an="+alleSpieler[currentPlayer].getcId(), mtype + mcontent + "Kreuz muss als Fehl bedient weren!!\n");
+							publishData("an=" + alleSpieler[currentPlayer].getcId(),
+									mtype + mcontent + "Kreuz muss als Fehl bedient weren!!\n");
 							karteSpielen();
 						} else {
 							ablegestapel.add(blatt[currentPlayer][n]);
 							blatt[currentPlayer][n] = null;
 						}
 					} else {
-						publishData("an="+alleSpieler[currentPlayer].getcId(), mtype + mcontent + "Die Karte existiert nicht.\n");
+						publishData("an=" + alleSpieler[currentPlayer].getcId(),
+								mtype + mcontent + "Die Karte existiert nicht.\n");
 						karteSpielen();
 					}
 				} else if (bedienen.equals("Pik")) {
@@ -438,17 +443,20 @@ public class Spielbrett {
 					if (!(blatt[currentPlayer][n] == null)) {
 						if (kannBedienen && blatt[currentPlayer][n].getColor().equals("Pik")
 								&& blatt[currentPlayer][n].getTrumpf()) {
-							publishData("an="+alleSpieler[currentPlayer].getcId(), mtype + mcontent + "Du musst mit Fehl bedienen.\n");
+							publishData("an=" + alleSpieler[currentPlayer].getcId(),
+									mtype + mcontent + "Du musst mit Fehl bedienen.\n");
 							karteSpielen();
 						} else if (kannBedienen && !blatt[currentPlayer][n].getColor().equals("Pik")) {
-							publishData("an="+alleSpieler[currentPlayer].getcId(),mtype + mcontent +  "Pik muss als Fehl bedient weren!!\n");
+							publishData("an=" + alleSpieler[currentPlayer].getcId(),
+									mtype + mcontent + "Pik muss als Fehl bedient weren!!\n");
 							karteSpielen();
 						} else {
 							ablegestapel.add(blatt[currentPlayer][n]);
 							blatt[currentPlayer][n] = null;
 						}
 					} else {
-						publishData("an="+alleSpieler[currentPlayer].getcId(), mtype + mcontent + "Die Karte existiert nicht.\n");
+						publishData("an=" + alleSpieler[currentPlayer].getcId(),
+								mtype + mcontent + "Die Karte existiert nicht.\n");
 						karteSpielen();
 					}
 				} else if (bedienen.equals("Herz")) {
@@ -463,24 +471,28 @@ public class Spielbrett {
 					if (!(blatt[currentPlayer][n] == null)) {
 						if (kannBedienen && blatt[currentPlayer][n].getColor().equals("Herz")
 								&& blatt[currentPlayer][n].getTrumpf()) {
-							publishData("an="+alleSpieler[currentPlayer].getcId(), mtype + mcontent + "Du musst mit Fehl bedienen\n");
+							publishData("an=" + alleSpieler[currentPlayer].getcId(),
+									mtype + mcontent + "Du musst mit Fehl bedienen\n");
 							karteSpielen();
 						} else if (kannBedienen && !blatt[currentPlayer][n].getColor().equals("Herz")) {
-							publishData("an="+alleSpieler[currentPlayer].getcId(),mtype + mcontent + "Herz muss als Fehl bedient weren!!\n");
+							publishData("an=" + alleSpieler[currentPlayer].getcId(),
+									mtype + mcontent + "Herz muss als Fehl bedient weren!!\n");
 							karteSpielen();
 						} else {
 							ablegestapel.add(blatt[currentPlayer][n]);
 							blatt[currentPlayer][n] = null;
 						}
 					} else {
-						publishData("an="+alleSpieler[currentPlayer].getcId(), mtype + mcontent + "Die Karte existiert nicht.\n");
+						publishData("an=" + alleSpieler[currentPlayer].getcId(),
+								mtype + mcontent + "Die Karte existiert nicht.\n");
 						karteSpielen();
 					}
 				}
 			}
 			checkHoechste();
 		} else {
-			publishData("an="+alleSpieler[currentPlayer].getcId(), mtype + mcontent + "Geben Sie eine vorhandene Karte an!\n");
+			publishData("an=" + alleSpieler[currentPlayer].getcId(),
+					mtype + mcontent + "Geben Sie eine vorhandene Karte an!\n");
 			karteSpielen();
 		}
 		return n;
@@ -488,29 +500,34 @@ public class Spielbrett {
 
 	// Darsstellen der Karten eines Spielers vor seinem Zug
 	public void blattAnzeigen() throws MqttException {
-		ausgabe="mtype=blattAnzeigen&mcontent=";
-		//ausgabe += "----- BLATT -----" + "\n";
-//		for (int k = 0; k < 12; k++) {
-//			if (blatt[currentPlayer][k] != null) {
-//				ausgabe += (k + 1) + ".\t";
-//			}
-//		}
-//		ausgabe += "\n";
-		for (int k = 0; k < 12; k++) {
-			if (blatt[currentPlayer][k] != null) {
-				ausgabe += k + "_" + blatt[currentPlayer][k].getColor() +"_" +  blatt[currentPlayer][k].getNumber() + "&" ;
-			} 
-		}
-//		ausgabe += "\n";
-//		for (int k = 0; k < 12; k++) {
-//			if (blatt[currentPlayer][k] != null) {
-//				
-//			}
-//		}
-//		ausgabe += "\n";
-//		ausgabe += "-- BLATT ENDE --";
-		publishData("an="+alleSpieler[currentPlayer].getcId(), ausgabe);
-	}
+	
+			ausgabe = "mtype=blattAnzeigen&mcontent=";
+			// ausgabe += "----- BLATT -----" + "\n";
+			// for (int k = 0; k < 12; k++) {
+			// if (blatt[currentPlayer][k] != null) {
+			// ausgabe += (k + 1) + ".\t";
+			// }
+			// }
+			// ausgabe += "\n";
+			
+				for (int k = 0; k < 12; k++) {
+					if (blatt[currentPlayer][k] != null) {
+						ausgabe += k + "_" + blatt[currentPlayer][k].getColor() + "_" + blatt[currentPlayer][k].getNumber()
+								+ "&";
+					}
+				}
+				// ausgabe += "\n";
+				// for (int k = 0; k < 12; k++) {
+				// if (blatt[currentPlayer][k] != null) {
+				//
+				// }
+				// }
+				// ausgabe += "\n";
+				// ausgabe += "-- BLATT ENDE --";
+				publishData("an=" + alleSpieler[currentPlayer].getcId(), ausgabe);
+			}
+		
+	
 
 	// Berechnen der Punkte
 	public int punkteBerechnen() {

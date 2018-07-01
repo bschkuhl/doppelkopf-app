@@ -12,6 +12,7 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 public class Spielerclient {
 
 	private static String clientId = "";
+	private static String name = "";
 	private static PWMediator pwm;
 
 	public Spielerclient(String name, PWMediator pwm) throws MqttException {
@@ -52,7 +53,10 @@ public class Spielerclient {
 
 					} else if (messageType.equals("nachricht")) {
 						System.out.println(messageContent);
-					} else {
+					}  else if (messageType.equals("stats")){
+						sendStats(m);
+					}
+					else {
 						Spielerclient.pwm.showCards(messageContent);
 					}
 				}
@@ -71,8 +75,9 @@ public class Spielerclient {
 		spielerclient.subscribe("allData");
 
 		clientId = spielerclient.getClientId();
+		Spielerclient.name = name;
 		spielerclient.subscribe("an=" + clientId);
-		String messageString = "cID=" + clientId + "&name=" + name;
+		String messageString = "mtype=getstats&ID=" + clientId + "&name=" + name;
 		MqttMessage message = new MqttMessage();
 		message.setPayload(messageString.getBytes());
 		spielerclient.publish("spielerData", message);
@@ -105,5 +110,14 @@ public class Spielerclient {
 		int n = reader.nextInt();
 		String m = "mtype=karte&mcontent=" + n;
 		publishData("von=" + clientId, m);
+	}
+	
+	public static void searchGame() throws MqttException {
+		String message = "mtype=connect&ID=" + clientId + "&name=" + Spielerclient.name;
+		Spielerclient.publishData("spielerData", message);
+	}
+	
+	public static void sendStats(String m) {
+		pwm.createStats(m);
 	}
 }

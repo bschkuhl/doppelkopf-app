@@ -15,7 +15,7 @@ public class Save {
 	private EntityManager em;
 
 	public void saveGame(Gamedata gamedata) {
-		factory.isOpen();
+		factory = Persistence.createEntityManagerFactory("doppelkopf");
 		EntityManager em = factory.createEntityManager();
 
 		em.getTransaction().begin();
@@ -29,10 +29,8 @@ public class Save {
 	}
 
 	public String getGames(String s) {
-		
-		
+				
 		factory = Persistence.createEntityManagerFactory("doppelkopf");
-		boolean test = factory.isOpen();
 		em = factory.createEntityManager();
 
 		Query query = em.createQuery("select g from Gamedata g where g.spieler1 = '" + s + "' OR g.spieler2 = '" + s

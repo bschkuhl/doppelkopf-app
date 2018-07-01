@@ -15,27 +15,19 @@ public class PWMediator {
 
 	}
 
-	public void getStats(String name) {
-		this.name = name;
-		Save save = new Save();
-		String stats = save.getGames(name);
-		String anzahl = "";
-		String gewonnen = "";
-		String punkte = "";
-		if (stats.split("&")[0].split("=")[1].length() > 0) {
-			anzahl = stats.split("&")[0].split("=")[1];
-			gewonnen = stats.split("&")[1].split("=")[1];
-			punkte = stats.split("&")[2].split("=")[1];
-		}
+	public void createStats(String stats) {
+		String anzahl = stats.split("&")[1].split("=")[1];
+		String gewonnen = stats.split("&")[2].split("=")[1];
+		String punkte = stats.split("&")[3].split("=")[1];
 
 		browser.createStatsFenster(anzahl, gewonnen, punkte);
 	}
-
-	public void createSpieler() {
+	
+	public void createSpieler(String username) {
+		this.name = username;
 		try {
-			browser.createSpielFenster();
 			spieler = new Spielerclient(name, this);
-			browser.createHand();
+			
 		} catch (MqttException e) {
 			e.printStackTrace();
 		}
@@ -48,5 +40,12 @@ public class PWMediator {
 		}
 
 		browser.updateHand(karten);
+	}
+	
+	public void connectSpieler() throws MqttException {
+		browser.createSpielFenster();
+		browser.createHand();
+		Spielerclient.searchGame();
+		
 	}
 }

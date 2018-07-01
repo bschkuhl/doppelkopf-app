@@ -23,6 +23,9 @@ import java.awt.Image;
 import java.awt.Panel;
 
 import javax.swing.JTextPane;
+
+import org.eclipse.paho.client.mqttv3.MqttException;
+
 import javax.swing.JPanel;
 import com.jgoodies.forms.layout.FormLayout;
 import com.jgoodies.forms.layout.ColumnSpec;
@@ -61,7 +64,8 @@ public class DoppelkopfBrowser {
 			public void actionPerformed(ActionEvent e) {
 
 				username = JOptionPane.showInputDialog("Enter your name");
-				pwm.getStats(username);
+				
+				pwm.createSpieler(username);
 
 			}
 		});
@@ -112,7 +116,12 @@ public class DoppelkopfBrowser {
 		btnNewButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				// NEUER SPIELERCLIENT
-				pwm.createSpieler();
+			try {
+				pwm.connectSpieler();
+			} catch (MqttException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
 
 			}
 		});
