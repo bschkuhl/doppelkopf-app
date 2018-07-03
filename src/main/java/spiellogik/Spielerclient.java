@@ -12,23 +12,12 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 public class Spielerclient {
 
 	private static String clientId = "";
+
 	private static String name = "";
 	private static PWMediator pwm;
 
 	public Spielerclient(String name, PWMediator pwm) throws MqttException {
 		Spielerclient.pwm = pwm;
-		// Scanner reader = new Scanner(System.in);
-		// String name = "";
-		// System.out.println("Bitte geben Sie ihren Nutzernamen ein:");
-		// name = reader.nextLine();
-		// System.out.println("Hallo " + name + " möchten Sie jetzt zum Doppelkopfserver
-		// verbinden? (y/n)");
-
-		// String connect = reader.nextLine();
-
-		// switch (connect) {
-		// case "y":
-
 		MqttClient spielerclient = new MqttClient("tcp://localhost:1883", MqttClient.generateClientId());
 
 		spielerclient.setCallback(new MqttCallback() {
@@ -39,25 +28,37 @@ public class Spielerclient {
 
 			@Override
 			public void messageArrived(String topic, MqttMessage message) throws Exception {
+				String messageContent = "";
 				if (topic.equals("allData")) {
-					System.out.println(new String(message.getPayload()));
+					String m = new String(message.getPayload());
+					setInfo(m);
+
 				} else {
 					String m = new String(message.getPayload());
 					String messageType = m.split("&")[0].split("=")[1];
-					String messageContent = m.split("&")[1].split("=")[1];
+					if (m.split("&")[1].split("=").length > 1) {
+						messageContent = m.split("&")[1].split("=")[1];
+					} else {
+						messageContent = "";
+					}
 
 					if (messageType.equals("karteSpielen")) {
-						System.out.println(messageContent);
-						clientKarteSpielen();
+						karteSpielen();
+
 					} else if (messageType.equals("karte")) {
 
 					} else if (messageType.equals("nachricht")) {
-						System.out.println(messageContent);
-					}  else if (messageType.equals("stats")){
+
+					} else if (messageType.equals("stats")) {
 						sendStats(m);
-					}
-					else {
+					} else if (messageType.equals("blattAnzeigen")) {
+						messageContent = m.split("=")[2];
 						Spielerclient.pwm.showCards(messageContent);
+					} else if (messageType.equals("stapel")) {
+						if (m.split("=").length > 2) {
+							messageContent = m.split("=")[2];
+							Spielerclient.pwm.showAblage(messageContent);
+						}
 					}
 				}
 
@@ -82,42 +83,54 @@ public class Spielerclient {
 		message.setPayload(messageString.getBytes());
 		spielerclient.publish("spielerData", message);
 
-		// break;
-		// case "n":
-		// System.out.println("Okay!");
-		// break;
-		//
-		// default:
-		// System.out.println("Hm?");
-		// break;
-		// }
+	}
+
+	public static void publishData(String channel, String data) {
+		try {
+			String messageString = data;
+			MqttClient client = new MqttClient("tcp://localhost:1883", MqttClient.generateClientId());
+			client.connect();
+			MqttMessage message = new MqttMessage();
+			message.setPayload(messageString.getBytes());
+			client.publish(channel, message);
+			client.disconnect();
+		} catch (MqttException e) {
+			e.printStackTrace();
+		}
 
 	}
 
-	public static void publishData(String channel, String data) throws MqttException {
+	public static void clientKarteSpielen(String a) {
+		// pwm.karteSpielen();
 
-		String messageString = data;
-		MqttClient client = new MqttClient("tcp://localhost:1883", MqttClient.generateClientId());
-		client.connect();
-		MqttMessage message = new MqttMessage();
-		message.setPayload(messageString.getBytes());
-		client.publish(channel, message);
-		client.disconnect();
-	}
-
-	public static void clientKarteSpielen() throws MqttException {
-		Scanner reader = new Scanner(System.in);
-		int n = reader.nextInt();
-		String m = "mtype=karte&mcontent=" + n;
+		// int n = reader.nextInt();
+		String m = "mtype=karte&mcontent=" + a;
 		publishData("von=" + clientId, m);
 	}
-	
+
 	public static void searchGame() throws MqttException {
 		String message = "mtype=connect&ID=" + clientId + "&name=" + Spielerclient.name;
 		Spielerclient.publishData("spielerData", message);
 	}
-	
+
 	public static void sendStats(String m) {
 		pwm.createStats(m);
 	}
+
+	public static String getClientId() {
+		return clientId;
+	}
+
+	public static void setClientId(String clientId) {
+		Spielerclient.clientId = clientId;
+	}
+
+	public static void karteSpielen() {
+		pwm.yourTurn();
+	}
+
+	private void setInfo(String m) {
+		pwm.setInfoText(m);
+	}
+
 }

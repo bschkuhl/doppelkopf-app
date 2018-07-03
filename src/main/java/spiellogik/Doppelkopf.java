@@ -25,9 +25,9 @@ public class Doppelkopf {
 	private static Save save;
 	private static MqttClient doppelkopfclient;
 
-//	public Doppelkopf() throws MqttException {
-//
-//	}
+	// public Doppelkopf() throws MqttException {
+	//
+	// }
 
 	public static void main(String[] args) throws MqttException {
 		spielerDaten = new Spieler[4];
@@ -42,15 +42,14 @@ public class Doppelkopf {
 			@Override
 			public void messageArrived(String topic, MqttMessage message) throws Exception {
 				String m = new String(message.getPayload());
-				System.out.println("Nachricht angekommen");
 				String mtype = m.split("&")[0].split("=")[1];
 				if (mtype.equals("connect")) {
-					System.out.println("new player joined");
+					System.out.println("new player joined ");
 
 					String id = m.split("&")[1].split("=")[1];
 					String name = m.split("&")[2].split("=")[1];
 					Spieler neuerSpieler = new Spieler(id, name);
-
+					System.out.print("Name: " + name + " ID: " + id + "\n");
 					spielerDaten[clientCount] = neuerSpieler;
 					clientCount++;
 					checkPlayerCount();
@@ -76,13 +75,17 @@ public class Doppelkopf {
 	public static void checkPlayerCount() throws MqttException, InterruptedException {
 
 		if (clientCount == 4) {
-			System.out.println("4 Spieler vorhanden!");
-
 			new Spielbrett(spielerDaten);
+		} else {
+			MqttMessage response = new MqttMessage();
+			Integer fehlen = 4 - clientCount;
+			String messageString = "Es fehlen noch " + fehlen + " Spieler." + "\n" + "Bitte keine Panik!";
+			response.setPayload(messageString.getBytes());
+
+			doppelkopfclient.publish("allData", response);
 		}
-		System.out.println("Es werden noch Spieler gesucht.");
 	}
-	
+
 	public static void getStats(String m) throws MqttPersistenceException, MqttException {
 
 		String id = m.split("&")[1].split("=")[1];

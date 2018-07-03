@@ -27,6 +27,8 @@ import javax.swing.JTextPane;
 import org.eclipse.paho.client.mqttv3.MqttException;
 
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+
 import com.jgoodies.forms.layout.FormLayout;
 import com.jgoodies.forms.layout.ColumnSpec;
 import com.jgoodies.forms.layout.RowSpec;
@@ -38,11 +40,13 @@ import javax.swing.ImageIcon;
 public class DoppelkopfBrowser {
 
 	private PWMediator pwm;
-	public JFrame f;
-	public String username;
+	private JFrame f;
+	private String username;
 	private HashMap componentMap;
-	public JPanel panel;
+	private JPanel panel;
 	List<JLabel> labelArray;
+	List<JLabel> ablageListe;
+	private static JTextArea textArea;
 
 	public DoppelkopfBrowser(PWMediator pwm) {
 		this.pwm = pwm;
@@ -54,8 +58,7 @@ public class DoppelkopfBrowser {
 		f = new JFrame("Doppelkopf-App");
 		f.setSize(800, 640);
 		f.setResizable(false);
-
-		f.setLocation(300, 200);
+		f.setLocationRelativeTo(null);
 		f.getContentPane().setLayout(null);
 
 		JButton btnNewButton = new JButton("Anmelden");
@@ -64,7 +67,7 @@ public class DoppelkopfBrowser {
 			public void actionPerformed(ActionEvent e) {
 
 				username = JOptionPane.showInputDialog("Enter your name");
-				
+
 				pwm.createSpieler(username);
 
 			}
@@ -79,9 +82,9 @@ public class DoppelkopfBrowser {
 
 	public void createStatsFenster(String a, String g, String p) {
 
+
+
 		f.getContentPane().removeAll();
-		f.getContentPane().revalidate();
-		f.getContentPane().repaint();
 
 		Panel panel = new Panel();
 		panel.setBackground(Color.WHITE);
@@ -116,16 +119,19 @@ public class DoppelkopfBrowser {
 		btnNewButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				// NEUER SPIELERCLIENT
-			try {
-				pwm.connectSpieler();
-			} catch (MqttException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
+				try {
+					pwm.connectSpieler();
+				} catch (MqttException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
 
 			}
 		});
 		f.getContentPane().add(btnNewButton);
+		
+		f.getContentPane().revalidate();
+		f.getContentPane().repaint();
 		f.setVisible(true);
 		f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
@@ -135,14 +141,24 @@ public class DoppelkopfBrowser {
 		f.getContentPane().revalidate();
 		f.getContentPane().repaint();
 		f.getContentPane().removeAll();
-		JTextArea textArea = new JTextArea();
-		textArea.setBounds(563, 75, 221, 391);
-		f.getContentPane().add(textArea);
+		textArea = new JTextArea();
+		ablageListe = new LinkedList<JLabel>();
 		textArea.setEditable(false);
+		// textArea.setAutoscrolls(true);
+
+		JScrollPane sp = new JScrollPane(textArea);
+		sp.setBounds(563, 75, 221, 391);
+		sp.setAutoscrolls(true);
+		f.getContentPane().add(sp);
 
 		JButton btnNewButton = new JButton("Spiel verlassen");
 		btnNewButton.setBounds(563, 36, 139, 23);
 		f.getContentPane().add(btnNewButton);
+		
+		JLabel spielertag = new JLabel(username);
+		spielertag.setFont(new Font("Monospaced", Font.BOLD, 21));
+		spielertag.setBounds(10, 36, 174, 23);
+		f.getContentPane().add(spielertag);
 
 		JLabel lblNewLabel = new JLabel("" + username);
 		f.getContentPane().add(lblNewLabel);
@@ -163,6 +179,11 @@ public class DoppelkopfBrowser {
 		ablage3.setBounds(174, 150, 52, 80);
 		ablage4.setBounds(236, 150, 52, 80);
 
+		
+		ablageListe.add(ablage1);
+		ablageListe.add(ablage2);
+		ablageListe.add(ablage3);
+		ablageListe.add(ablage4);
 		panel.add(ablage1);
 		panel.add(ablage2);
 		panel.add(ablage3);
@@ -171,6 +192,7 @@ public class DoppelkopfBrowser {
 		createHand();
 
 		f.setVisible(true);
+		f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 	}
 
 	public void createHand() {
@@ -212,8 +234,9 @@ public class DoppelkopfBrowser {
 				@Override
 				public void mousePressed(MouseEvent arg0) {
 					// TODO Auto-generated method stub
-					Object a = arg0.getComponent().getName();
-					System.out.println(a);
+
+					String a = arg0.getComponent().getName();
+					pwm.karteSpielen(a);
 
 				}
 
@@ -226,6 +249,7 @@ public class DoppelkopfBrowser {
 
 			panel.add(labelArray.get(i));
 		}
+		// createComponentMap();
 	}
 
 	public void updateHand(String[] karten) {
@@ -240,140 +264,140 @@ public class DoppelkopfBrowser {
 
 				case "Herz":
 					farbe = "H";
-					switch (karten[i].split("_")[1]) {
+					switch (karten[i].split("_")[2]) {
 					case "Ass":
 						wert = "Ass";
-						l = (JLabel) getComponentByName(karten[i].split("_")[0]);
+						l = labelArray.get(Integer.parseInt(karten[i].split("_")[0]));
 						l.setIcon(scaleCard(wert + farbe));
 						break;
 					case "Koenig":
 						wert = "Koenig";
-						l = (JLabel) getComponentByName(karten[i].split("_")[0]);
+						l = labelArray.get(Integer.parseInt(karten[i].split("_")[0]));
 						l.setIcon(scaleCard(wert + farbe));
 						break;
 					case "Dame":
 						wert = "Dame";
-						l = (JLabel) getComponentByName(karten[i].split("_")[0]);
+						l = labelArray.get(Integer.parseInt(karten[i].split("_")[0]));
 						l.setIcon(scaleCard(wert + farbe));
 						break;
 					case "Bube":
 						wert = "Bube";
-						l = (JLabel) getComponentByName(karten[i].split("_")[0]);
+						l = labelArray.get(Integer.parseInt(karten[i].split("_")[0]));
 						l.setIcon(scaleCard(wert + farbe));
 						break;
 					case "10":
 						wert = "10";
-						l = (JLabel) getComponentByName(karten[i].split("_")[0]);
+						l = labelArray.get(Integer.parseInt(karten[i].split("_")[0]));
 						l.setIcon(scaleCard(wert + farbe));
 						break;
 					case "9":
 						wert = "9";
-						l = (JLabel) getComponentByName(karten[i].split("_")[0]);
+						l = labelArray.get(Integer.parseInt(karten[i].split("_")[0]));
 						l.setIcon(scaleCard(wert + farbe));
 						break;
 					}
 					break;
 				case "Karo":
 					farbe = "Ka";
-					switch (karten[i].split("_")[1]) {
+					switch (karten[i].split("_")[2]) {
 					case "Ass":
 						wert = "Ass";
-						l = (JLabel) getComponentByName(karten[i].split("_")[0]);
+						l = labelArray.get(Integer.parseInt(karten[i].split("_")[0]));
 						l.setIcon(scaleCard(wert + farbe));
 						break;
 					case "Koenig":
 						wert = "Koenig";
-						l = (JLabel) getComponentByName(karten[i].split("_")[0]);
+						l = labelArray.get(Integer.parseInt(karten[i].split("_")[0]));
 						l.setIcon(scaleCard(wert + farbe));
 						break;
 					case "Dame":
 						wert = "Dame";
-						l = (JLabel) getComponentByName(karten[i].split("_")[0]);
+						l = labelArray.get(Integer.parseInt(karten[i].split("_")[0]));
 						l.setIcon(scaleCard(wert + farbe));
 						break;
 					case "Bube":
 						wert = "Bube";
-						l = (JLabel) getComponentByName(karten[i].split("_")[0]);
+						l = labelArray.get(Integer.parseInt(karten[i].split("_")[0]));
 						l.setIcon(scaleCard(wert + farbe));
 						break;
 					case "10":
 						wert = "10";
-						l = (JLabel) getComponentByName(karten[i].split("_")[0]);
+						l = labelArray.get(Integer.parseInt(karten[i].split("_")[0]));
 						l.setIcon(scaleCard(wert + farbe));
 						break;
 					case "9":
 						wert = "9";
-						l = (JLabel) getComponentByName(karten[i].split("_")[0]);
+						l = labelArray.get(Integer.parseInt(karten[i].split("_")[0]));
 						l.setIcon(scaleCard(wert + farbe));
 						break;
 					}
 					break;
 				case "Kreuz":
 					farbe = "K";
-					switch (karten[i].split("_")[1]) {
+					switch (karten[i].split("_")[2]) {
 					case "Ass":
 						wert = "Ass";
-						l = (JLabel) getComponentByName(karten[i].split("_")[0]);
+						l = labelArray.get(Integer.parseInt(karten[i].split("_")[0]));
 						l.setIcon(scaleCard(wert + farbe));
 						break;
 					case "Koenig":
 						wert = "Koenig";
-						l = (JLabel) getComponentByName(karten[i].split("_")[0]);
+						l = labelArray.get(Integer.parseInt(karten[i].split("_")[0]));
 						l.setIcon(scaleCard(wert + farbe));
 						break;
 					case "Dame":
 						wert = "Dame";
-						l = (JLabel) getComponentByName(karten[i].split("_")[0]);
+						l = labelArray.get(Integer.parseInt(karten[i].split("_")[0]));
 						l.setIcon(scaleCard(wert + farbe));
 						break;
 					case "Bube":
 						wert = "Bube";
-						l = (JLabel) getComponentByName(karten[i].split("_")[0]);
+						l = labelArray.get(Integer.parseInt(karten[i].split("_")[0]));
 						l.setIcon(scaleCard(wert + farbe));
 						break;
 					case "10":
 						wert = "10";
-						l = (JLabel) getComponentByName(karten[i].split("_")[0]);
+						l = labelArray.get(Integer.parseInt(karten[i].split("_")[0]));
 						l.setIcon(scaleCard(wert + farbe));
 						break;
 					case "9":
 						wert = "9";
-						l = (JLabel) getComponentByName(karten[i].split("_")[0]);
+						l = labelArray.get(Integer.parseInt(karten[i].split("_")[0]));
 						l.setIcon(scaleCard(wert + farbe));
 						break;
 					}
 					break;
 				case "Pik":
 					farbe = "P";
-					switch (karten[i].split("_")[1]) {
+					switch (karten[i].split("_")[2]) {
 					case "Ass":
 						wert = "Ass";
-						l = (JLabel) getComponentByName(karten[i].split("_")[0]);
+						l = labelArray.get(Integer.parseInt(karten[i].split("_")[0]));
 						l.setIcon(scaleCard(wert + farbe));
 						break;
 					case "Koenig":
 						wert = "Koenig";
-						l = (JLabel) getComponentByName(karten[i].split("_")[0]);
+						l = labelArray.get(Integer.parseInt(karten[i].split("_")[0]));
 						l.setIcon(scaleCard(wert + farbe));
 						break;
 					case "Dame":
 						wert = "Dame";
-						l = (JLabel) getComponentByName(karten[i].split("_")[0]);
+						l = labelArray.get(Integer.parseInt(karten[i].split("_")[0]));
 						l.setIcon(scaleCard(wert + farbe));
 						break;
 					case "Bube":
 						wert = "Bube";
-						l = (JLabel) getComponentByName(karten[i].split("_")[0]);
+						l = labelArray.get(Integer.parseInt(karten[i].split("_")[0]));
 						l.setIcon(scaleCard(wert + farbe));
 						break;
 					case "10":
 						wert = "10";
-						l = (JLabel) getComponentByName(karten[i].split("_")[0]);
+						l = labelArray.get(Integer.parseInt(karten[i].split("_")[0]));
 						l.setIcon(scaleCard(wert + farbe));
 						break;
 					case "9":
 						wert = "9";
-						l = (JLabel) getComponentByName(karten[i].split("_")[0]);
+						l = labelArray.get(Integer.parseInt(karten[i].split("_")[0]));
 						l.setIcon(scaleCard(wert + farbe));
 						break;
 					}
@@ -406,18 +430,184 @@ public class DoppelkopfBrowser {
 		return (double) tmp / factor;
 	}
 
-	private void createComponentMap() {
-		componentMap = new HashMap<String, Component>();
-		Component[] components = f.getContentPane().getComponents();
-		for (int i = 0; i < components.length; i++) {
-			componentMap.put(components[i].getName(), components[i]);
+	public static void infobox(String info) {
+		info = info + "\n";
+		if (textArea != null) {
+		textArea.append(info);
 		}
 	}
 
-	public Component getComponentByName(String name) {
-		if (componentMap.containsKey(name)) {
-			return (Component) componentMap.get(name);
-		} else
-			return null;
+	
+	public void updateStapel(String[] karten) {
+		for (int i = 0; i < karten.length; i++) {
+			String farbe = "";
+			String wert = "";
+			JLabel l;
+
+			if (karten[i].split("_")[1].length() > 0) {
+				switch (karten[i].split("_")[1]) {
+
+				case "Herz":
+					farbe = "H";
+					switch (karten[i].split("_")[2]) {
+					case "Ass":
+						wert = "Ass";
+						l = ablageListe.get(Integer.parseInt(karten[i].split("_")[0]));
+						l.setIcon(scaleCard(wert + farbe));
+						break;
+					case "Koenig":
+						wert = "Koenig";
+						l = ablageListe.get(Integer.parseInt(karten[i].split("_")[0]));
+						l.setIcon(scaleCard(wert + farbe));
+						break;
+					case "Dame":
+						wert = "Dame";
+						l = ablageListe.get(Integer.parseInt(karten[i].split("_")[0]));
+						l.setIcon(scaleCard(wert + farbe));
+						break;
+					case "Bube":
+						wert = "Bube";
+						l = ablageListe.get(Integer.parseInt(karten[i].split("_")[0]));
+						l.setIcon(scaleCard(wert + farbe));
+						break;
+					case "10":
+						wert = "10";
+						l = ablageListe.get(Integer.parseInt(karten[i].split("_")[0]));
+						l.setIcon(scaleCard(wert + farbe));
+						break;
+					case "9":
+						wert = "9";
+						l = ablageListe.get(Integer.parseInt(karten[i].split("_")[0]));
+						l.setIcon(scaleCard(wert + farbe));
+						break;
+					}
+					break;
+				case "Karo":
+					farbe = "Ka";
+					switch (karten[i].split("_")[2]) {
+					case "Ass":
+						wert = "Ass";
+						l = ablageListe.get(Integer.parseInt(karten[i].split("_")[0]));
+						l.setIcon(scaleCard(wert + farbe));
+						break;
+					case "Koenig":
+						wert = "Koenig";
+						l = ablageListe.get(Integer.parseInt(karten[i].split("_")[0]));
+						l.setIcon(scaleCard(wert + farbe));
+						break;
+					case "Dame":
+						wert = "Dame";
+						l = ablageListe.get(Integer.parseInt(karten[i].split("_")[0]));
+						l.setIcon(scaleCard(wert + farbe));
+						break;
+					case "Bube":
+						wert = "Bube";
+						l = ablageListe.get(Integer.parseInt(karten[i].split("_")[0]));
+						l.setIcon(scaleCard(wert + farbe));
+						break;
+					case "10":
+						wert = "10";
+						l = ablageListe.get(Integer.parseInt(karten[i].split("_")[0]));
+						l.setIcon(scaleCard(wert + farbe));
+						break;
+					case "9":
+						wert = "9";
+						l = ablageListe.get(Integer.parseInt(karten[i].split("_")[0]));
+						l.setIcon(scaleCard(wert + farbe));
+						break;
+					}
+					break;
+				case "Kreuz":
+					System.out.println((karten[i].split("_")[1]));
+					farbe = "K";
+					switch (karten[i].split("_")[2]) {
+					case "Ass":
+						wert = "Ass";
+						l = ablageListe.get(Integer.parseInt(karten[i].split("_")[0]));
+						l.setIcon(scaleCard(wert + farbe));
+						break;
+					case "Koenig":
+						wert = "Koenig";
+						l = ablageListe.get(Integer.parseInt(karten[i].split("_")[0]));
+						l.setIcon(scaleCard(wert + farbe));
+						break;
+					case "Dame":
+						wert = "Dame";
+						l = ablageListe.get(Integer.parseInt(karten[i].split("_")[0]));
+						l.setIcon(scaleCard(wert + farbe));
+						break;
+					case "Bube":
+						wert = "Bube";
+						l = ablageListe.get(Integer.parseInt(karten[i].split("_")[0]));
+						l.setIcon(scaleCard(wert + farbe));
+						break;
+					case "10":
+						wert = "10";
+						l = ablageListe.get(Integer.parseInt(karten[i].split("_")[0]));
+						l.setIcon(scaleCard(wert + farbe));
+						break;
+					case "9":
+						wert = "9";
+						l = ablageListe.get(Integer.parseInt(karten[i].split("_")[0]));
+						l.setIcon(scaleCard(wert + farbe));
+						break;
+					}
+					break;
+				case "Pik":
+					System.out.println((karten[i].split("_")[1]));
+					farbe = "P";
+					switch (karten[i].split("_")[2]) {
+					case "Ass":
+						wert = "Ass";
+						l = ablageListe.get(Integer.parseInt(karten[i].split("_")[0]));
+						l.setIcon(scaleCard(wert + farbe));
+						break;
+					case "Koenig":
+						wert = "Koenig";
+						l = ablageListe.get(Integer.parseInt(karten[i].split("_")[0]));
+						l.setIcon(scaleCard(wert + farbe));
+						break;
+					case "Dame":
+						wert = "Dame";
+						l = ablageListe.get(Integer.parseInt(karten[i].split("_")[0]));
+						l.setIcon(scaleCard(wert + farbe));
+						break;
+					case "Bube":
+						wert = "Bube";
+						l = ablageListe.get(Integer.parseInt(karten[i].split("_")[0]));
+						l.setIcon(scaleCard(wert + farbe));
+						break;
+					case "10":
+						wert = "10";
+						l = ablageListe.get(Integer.parseInt(karten[i].split("_")[0]));
+						l.setIcon(scaleCard(wert + farbe));
+						break;
+					case "9":
+						wert = "9";
+						l = ablageListe.get(Integer.parseInt(karten[i].split("_")[0]));
+						l.setIcon(scaleCard(wert + farbe));
+						break;
+					}
+					break;
+				}
+			}
+		}
+
+
 	}
+	// private void createComponentMap() {
+	// componentMap = new HashMap<String, Component>();
+	// Component[] components = f.getContentPane().getComponents();
+	// for (int i = 0; i < components.length; i++) {
+	// componentMap.put(components[i].getName(), components[i]);
+	// }
+	// }
+	//
+	// public Component getComponentByName(String name) {
+	// System.out.println(componentMap);
+	// if (componentMap.containsKey(name)) {
+	// return (Component) componentMap.get(name);
+	// } else
+	// return null;
+	// }
 }
