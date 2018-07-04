@@ -58,7 +58,7 @@ public class Spielbrett {
 		spieler4 = spielerdaten[3];
 		spieler4.nummer = 4;
 		alleSpieler = spielerdaten;
-		gamedata = new Gamedata(0, 0, 0, 0, "", "", "", "", "");
+		gamedata = new Gamedata();
 		save = new Save();
 
 		spielbrettclient = new MqttClient("tcp://localhost:1883", MqttClient.generateClientId());
@@ -95,6 +95,7 @@ public class Spielbrett {
 
 	// Erstellen des Stapels, Zuweisung von Werten (Farbe, Trumpf etc) zu den Karten
 	public void stapelErstellen() {
+		System.out.println("stapelErstellen");
 		String color = null;
 		String number = null;
 		int value = 0;
@@ -115,6 +116,7 @@ public class Spielbrett {
 			int j = i % 12;
 			switch (j) {
 			case 0:
+			case 1:
 				number = "Ass";
 				value = 11;
 				if (!color.equals("Karo")) {
@@ -189,10 +191,13 @@ public class Spielbrett {
 
 			stapel[i] = new Karte(color, number, value, trumpf, order);
 		}
+		
+
 	}
 
 	// Mischen des Stapels
 	public void shuffle() {
+		System.out.println("shuffle");
 		Karte tmp;
 		int rand;
 		Random r = new Random();
@@ -206,6 +211,7 @@ public class Spielbrett {
 
 	// Zuweisung der Karten zu Spielern
 	public void verteileKarten() {
+		System.out.println("verteileKarten");
 		for (int i = 0; i < 48; i++) {
 			if (i < 12) {
 				blatt[0][i] = stapel[i];
@@ -221,6 +227,7 @@ public class Spielbrett {
 
 	// Starten des Spiels, steuert Gewinnbedingungen, gibt Tabellen aus
 	public void startGame() throws MqttException, InterruptedException {
+		System.out.println("startGame");
 		ausgabe = "";
 		ausgabe += "Spiel gestartet" + "\n";
 		ausgabe += "# NEUES SPIEL GESTARTET #" + "\n";
@@ -243,6 +250,7 @@ public class Spielbrett {
 			ausgabe = "";
 			blattAnzeigen();
 			startRound();
+			
 			ausgabe = "";
 			ausgabe += "\n";
 			ausgabe += "RUNDE " + (i + 1) + " BEENDET";
@@ -251,50 +259,68 @@ public class Spielbrett {
 
 			if (berechneRe() >= 121) {
 				ausgabe += "TEAM RE GEWINNT DAS SPIEL" + "\n";
-				ausgabe += "TEAM RE (";
+				ausgabe += "TEAM RE: \n";
 				for (Spieler s : re) {
 					int e = s.nummer -1;
-					ausgabe += alleSpieler[e].getUsername()  + " ";
+					ausgabe += alleSpieler[e].getUsername()  + "\n";
 				}
-				ausgabe += ") GEWINNEN MIT EINER PUNKTZAHL VON: " + berechneRe() + " PUNKTEN!";
+				ausgabe += "GEWINNEN MIT EINER PUNKTZAHL VON: " + berechneRe() + " PUNKTEN!";
 				ausgabe += "\n";
+				Spielbrett.publishData("allData", ausgabe);
 				break;
 			} else if (berechneKontra() >= 120) {
-				ausgabe += "TEAM KONTRA GEWINNT DAS SPIEL";
-				ausgabe += "TEAM KONTRA (";
+				ausgabe += "TEAM KONTRA GEWINNT DAS SPIEL" + "\n";
+				ausgabe += "TEAM KONTRA: \n";
 				for (Spieler s : kontra) {
 					int e = s.nummer -1;
-					ausgabe += alleSpieler[e].getUsername()  + " ";
+					ausgabe += alleSpieler[e].getUsername()  + "\n";
 				}
-				ausgabe += ") GEWINNEN MIT EINER PUNKTZAHL VON: " + berechneKontra() + " PUNKTEN!";
+				ausgabe += "GEWINNEN MIT EINER PUNKTZAHL VON: " + berechneKontra() + " PUNKTEN!";
 				ausgabe += "\n";
+				Spielbrett.publishData("allData", ausgabe);
 				break;
 			}
 			Spielbrett.publishData("allData", ausgabe);
 		}
 		ausgabe = "";
-		ausgabe += "____________ ENDPUNKTESTAND ____________";
+		ausgabe += "_ ENDPUNKTESTAND _";
 		ausgabe += "\n";
 		ausgabe += spieler1.getUsername() + ": " + spieler1.getpunktestand() + "\n";
 		ausgabe += spieler2.getUsername() +  ": " + spieler2.getpunktestand() + "\n";
 		ausgabe += spieler3.getUsername() +  ": " + spieler3.getpunktestand() + "\n";
 		ausgabe += spieler4.getUsername() + ": " + spieler4.getpunktestand() + "\n";
-		ausgabe += "________________________________________" + "\n";
+		ausgabe += "_____________________" + "\n";
 
-		ausgabe += "## SPIEL BEENDET #" + "\n";
+		ausgabe += "# SPIEL BEENDET #" + "\n";
 		Spielbrett.publishData("allData", ausgabe);
+		
+		gamedata.setSpielstand1(spieler1.getpunktestand());
+		gamedata.setSpielstand2(spieler2.getpunktestand());
+		gamedata.setSpielstand3(spieler3.getpunktestand());
+		gamedata.setSpielstand4(spieler4.getpunktestand());
+		gamedata.setSpieler1(alleSpieler[0].getUsername());
+		gamedata.setSpieler2(alleSpieler[1].getUsername());
+		gamedata.setSpieler3(alleSpieler[2].getUsername());
+		gamedata.setSpieler4(alleSpieler[3].getUsername());
+		gamedata.setDate("" + System.currentTimeMillis() + "");
+
+		save.saveGame(gamedata);
+		for (int i = 0; i < 4; i++) {
+			publishData("an=" + alleSpieler[i].getcId(), "mtype=disconnect&mcontent=true");
+		}
 	}
 
 	// Starten der einzelnen Runde (jeder spielt eine Karte)
 	public void startRound() throws MqttException, InterruptedException {
+		System.out.println("startRound");
 		bedienen = null;
 		for (int i = 0; i < 4; i++) {
 			ausgabe = "";
 			ausgabe += "\n" + alleSpieler[currentPlayer].getUsername() + " ist an der Reihe";
 			Spielbrett.publishData("allData", ausgabe);
 
-			ablegestapelAnzeigen();
 			karteSpielen();
+			ablegestapelAnzeigen();
 
 			if (currentPlayer == 3) {
 				currentPlayer = currentPlayer - 3;
@@ -308,30 +334,22 @@ public class Spielbrett {
 		alleSpieler[bekommtStich].setpunktestand(neuePunkte);
 		currentPlayer = bekommtStich;
 		hoechsteGespielte = null;
+		ablegestapelAnzeigen();
 
-		gamedata.setSpielstand1(spieler1.getpunktestand());
-		gamedata.setSpielstand2(spieler2.getpunktestand());
-		gamedata.setSpielstand3(spieler3.getpunktestand());
-		gamedata.setSpielstand4(spieler4.getpunktestand());
-		gamedata.setSpieler1(alleSpieler[0].getUsername());
-		gamedata.setSpieler2(alleSpieler[1].getUsername());
-		gamedata.setSpieler3(alleSpieler[2].getUsername());
-		gamedata.setSpieler4(alleSpieler[3].getUsername());
-		gamedata.setDate("" + System.currentTimeMillis() + "");
-
-		save.saveGame(gamedata);
 		ablegestapel.clear();
+		bedienen = null;
 	}
 
 	// Anzeigen des Ablegestapels vor dem Spielen einer Karte
 	public void ablegestapelAnzeigen() throws MqttException {
+		System.out.println("ablegestapelAnzeigen");
 		ausgabe = "";
 
 		String stapel = "mtype=stapel&mcontent=";
 
 		for (int k = 0; k < ablegestapel.size(); k++) {
 			stapel += k + "_" + ablegestapel.get(k).getColor() + "_";
-			stapel += ablegestapel.get(k).getNumber() + "_";
+			stapel += ablegestapel.get(k).getNumber() + "&";
 		}
 
 		// IN INFOBOX
@@ -343,7 +361,7 @@ public class Spielbrett {
 				ausgabe += "\n" + ablegestapel.get(0).getColor() + " muss in Fehl bedient werden.";
 				bedienen = ablegestapel.get(0).getColor();
 			}
-			ausgabe += "\n" + "Aktuelle Punkte auf Ablegestapel: " + punkteBerechnen() + "\n" + "//// STAPELENDE ////";
+			ausgabe += "\n" + "Aktuelle Punkte auf Ablegestapel: " + punkteBerechnen();
 			publishData("allData", ausgabe);
 		}
 
@@ -356,8 +374,12 @@ public class Spielbrett {
 	// Spielen einer Karte, steuert Bedingungen ob und wann welche Karten gespielt
 	// werden dürfen
 	public int karteSpielen() throws MqttException, InterruptedException {
+		System.out.println("karteSpielen");
 		String mtype = "mtype=karteSpielen";
 		String mcontent = "&mcontent=Spielen Sie eine Karte";
+		int n = 0;
+		try {
+		
 		publishData("an=" + alleSpieler[currentPlayer].getcId(), mtype + mcontent);
 
 		while (!weiter) {
@@ -368,9 +390,8 @@ public class Spielbrett {
 		boolean kannBedienen = false;
 		mtype = "mtype=nachricht";
 		mcontent = "&mcontent=";
-		int n = Integer.parseInt(mAnswer) - 1;
+		n = Integer.parseInt(mAnswer) - 1;
 		if (0 <= n && n < 12) {
-
 			if (bedienen == null) {
 				ablegestapel.add(blatt[currentPlayer][n]);
 				blatt[currentPlayer][n] = null;
@@ -493,12 +514,16 @@ public class Spielbrett {
 					mtype + mcontent + "Geben Sie eine vorhandene Karte an!\n");
 			karteSpielen();
 		}
+		
+		} catch (MqttException e) {
+			e.printStackTrace();
+		}
 		return n;
 	}
 
 	// Darsstellen der Karten eines Spielers vor seinem Zug
 	public void blattAnzeigen() throws MqttException {
-
+		System.out.println("blattAnzeigen");
 		for (int i = 0; i < 4; i++) {
 			ausgabe = "mtype=blattAnzeigen&mcontent=";
 			for (int k = 0; k < 12; k++) {
@@ -514,6 +539,7 @@ public class Spielbrett {
 
 	// Berechnen der Punkte
 	public int punkteBerechnen() {
+		System.out.println("punkteBerechnen");
 		int punkte = 0;
 		for (int k = 0; k < ablegestapel.size(); k++) {
 			punkte += ablegestapel.get(k).getValue();
@@ -523,6 +549,7 @@ public class Spielbrett {
 
 	// Berechnen der aktuell hoechsten Karte auf dem Ablagestapel
 	public void checkHoechste() {
+		System.out.println("checkHoechste");
 		if (hoechsteGespielte == null) {
 			hoechsteGespielte = ablegestapel.get(0);
 			bekommtStich = currentPlayer;
@@ -539,18 +566,17 @@ public class Spielbrett {
 				}
 			}
 		}
-		System.out.println("Hoechste gespielte Karte hat Wert: " + hoechsteGespielte.getValue());
-
 	}
 
 	// Methode bestimmt später Spielvariationen, derzeit leer
 	public void ansagen() throws MqttException {
-
+		System.out.println("ansagen");
 		Spielbrett.publishData("allData", "GESPIELT WIRD OHNE ANSAGEN");
 	}
 
 	// Bestimmt werden die Teams nach Kreuz Dame
 	public void teamsBilden() {
+		System.out.println("teamsBilden");
 		for (int i = 0; i < 4; i++) {
 			boolean hatDame = false;
 			boolean solo = false;
@@ -576,6 +602,7 @@ public class Spielbrett {
 
 	// Berechnung der Punkte des Teams mit Kreuz Damen
 	public int berechneRe() {
+		System.out.println("berechneRe");
 		int punkte = 0;
 		for (Spieler s : re) {
 			punkte += s.getpunktestand();
@@ -585,6 +612,7 @@ public class Spielbrett {
 
 	// Berechnung der Punkte des Teams ohne Kreuz Damen
 	public int berechneKontra() {
+		System.out.println("berechneKontra");
 		int punkte = 0;
 		for (Spieler s : kontra) {
 			punkte += s.getpunktestand();
@@ -593,7 +621,7 @@ public class Spielbrett {
 	}
 
 	public static void publishData(String channel, String data) throws MqttException {
-
+		System.out.println("brett publishData");
 		String messageString = data;
 		MqttClient client = new MqttClient("tcp://localhost:1883", MqttClient.generateClientId());
 

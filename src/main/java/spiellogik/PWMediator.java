@@ -17,6 +17,7 @@ public class PWMediator {
 	}
 
 	public void createStats(String stats) {
+		System.out.println("createStats");
 		String anzahl = stats.split("&")[1].split("=")[1];
 		String gewonnen = stats.split("&")[2].split("=")[1];
 		String punkte = stats.split("&")[3].split("=")[1];
@@ -25,6 +26,7 @@ public class PWMediator {
 	}
 
 	public void createSpieler(String username) {
+		System.out.println("createSpieler");
 		this.name = username;
 		try {
 			spieler = new Spielerclient(name, this);
@@ -35,45 +37,48 @@ public class PWMediator {
 	}
 
 	public void showCards(String message) {
-		String[] karten = new String[12];
-		for (int i = 0; i < 12; i++) {
+		System.out.println("showCards");
+		//0_Pik_Dame&1_Kreuz_Koenig&2_Pik_Bube&3_Kreuz_Bube&4_Herz_Koenig&5_Herz_Ass&6_Herz_Dame&7_Pik_10&8_Karo_Koenig&9_Karo_Dame&11_Kreuz_Koenig&
+		Integer klength = message.split("&").length;
+		String[] karten = new String[klength];
+		for (int i = 0; i < klength; i++) {
 			karten[i] = message.split("&")[i];
 		}
 
 		browser.updateHand(karten);
 	}
-	
+
 	public void showAblage(String message) {
+		System.out.println("showAblage");
+		Integer klength = message.split("&").length;
 
+		String[] karten = new String[klength];
+		for (int i = 0; i < klength; i++) {
 
-			Integer klength = message.split("=")[2].split("&").length;
+			karten[i] = message.split("&")[i];
+		}
 
-			String[] karten = new String[klength];
-			for (int i = 0; i < klength; i++) {
-				
-				karten[i] = message.split("&")[i];
-			}
+		browser.updateStapel(karten);
 
-			browser.updateStapel(karten);
-
-
-		
 	}
 
 	public void connectSpieler() throws MqttException {
+		System.out.println("connectSpieler");
 		browser.createSpielFenster();
 		browser.createHand();
 		Spielerclient.searchGame();
 
 	}
-	
+
 	public void yourTurn() {
+		System.out.println("yourTurn");
 		darfSpielen = true;
-		//AUSGABE "DEIN ZUG"
+		// AUSGABE "DEIN ZUG"
 		browser.infobox("Spielen Sie eine Karte.");
 	}
 
 	public void karteSpielen(String a) {
+		System.out.println("karteSpielen");
 		if (darfSpielen) {
 			spieler.clientKarteSpielen(a);
 			darfSpielen = false;
@@ -81,6 +86,7 @@ public class PWMediator {
 	}
 
 	public void setInfoText(String m) {
+		System.out.println("setInfoText");
 		browser.infobox(m);
 	}
 }

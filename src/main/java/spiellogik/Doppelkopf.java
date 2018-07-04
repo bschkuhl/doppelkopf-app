@@ -73,9 +73,11 @@ public class Doppelkopf {
 	}
 
 	public static void checkPlayerCount() throws MqttException, InterruptedException {
-
+		System.out.println("checkPlayerCount");
 		if (clientCount == 4) {
 			new Spielbrett(spielerDaten);
+			doppelkopfclient.disconnect();
+			doppelkopfclient.close();
 		} else {
 			MqttMessage response = new MqttMessage();
 			Integer fehlen = 4 - clientCount;
@@ -87,7 +89,7 @@ public class Doppelkopf {
 	}
 
 	public static void getStats(String m) throws MqttPersistenceException, MqttException {
-
+		System.out.println("getStats");
 		String id = m.split("&")[1].split("=")[1];
 		String name = m.split("&")[2].split("=")[1];
 		String stats = save.getGames(name);

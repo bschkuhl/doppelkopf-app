@@ -15,7 +15,7 @@ public class Spielerclient {
 
 	private static String name = "";
 	private static PWMediator pwm;
-
+    private static MqttClient client;
 	public Spielerclient(String name, PWMediator pwm) throws MqttException {
 		Spielerclient.pwm = pwm;
 		MqttClient spielerclient = new MqttClient("tcp://localhost:1883", MqttClient.generateClientId());
@@ -48,7 +48,7 @@ public class Spielerclient {
 					} else if (messageType.equals("karte")) {
 
 					} else if (messageType.equals("nachricht")) {
-
+						setInfo(messageContent);
 					} else if (messageType.equals("stats")) {
 						sendStats(m);
 					} else if (messageType.equals("blattAnzeigen")) {
@@ -59,7 +59,9 @@ public class Spielerclient {
 							messageContent = m.split("=")[2];
 							Spielerclient.pwm.showAblage(messageContent);
 						}
-					}
+					}else if (messageType.equals("disconnet")) {
+						disconnectClient();
+					} 
 				}
 
 			}
@@ -86,9 +88,10 @@ public class Spielerclient {
 	}
 
 	public static void publishData(String channel, String data) {
+		System.out.println("client publishData");
 		try {
 			String messageString = data;
-			MqttClient client = new MqttClient("tcp://localhost:1883", MqttClient.generateClientId());
+			client = new MqttClient("tcp://localhost:1883", MqttClient.generateClientId());
 			client.connect();
 			MqttMessage message = new MqttMessage();
 			message.setPayload(messageString.getBytes());
@@ -101,6 +104,7 @@ public class Spielerclient {
 	}
 
 	public static void clientKarteSpielen(String a) {
+		System.out.println("clientKarteSpielen");
 		// pwm.karteSpielen();
 
 		// int n = reader.nextInt();
@@ -109,28 +113,38 @@ public class Spielerclient {
 	}
 
 	public static void searchGame() throws MqttException {
+		System.out.println("searchGame");
 		String message = "mtype=connect&ID=" + clientId + "&name=" + Spielerclient.name;
 		Spielerclient.publishData("spielerData", message);
 	}
 
 	public static void sendStats(String m) {
+		System.out.println("sendStats");
 		pwm.createStats(m);
 	}
 
 	public static String getClientId() {
+		System.out.println("getClientId");
 		return clientId;
 	}
 
 	public static void setClientId(String clientId) {
+		System.out.println("setClientId");
 		Spielerclient.clientId = clientId;
 	}
 
 	public static void karteSpielen() {
+		System.out.println("karteSpielen");
 		pwm.yourTurn();
 	}
 
 	private void setInfo(String m) {
+		System.out.println("setInfo");
 		pwm.setInfoText(m);
+	}
+	
+	public static void disconnectClient() throws MqttException {
+		client.close();
 	}
 
 }
